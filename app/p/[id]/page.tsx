@@ -3,11 +3,13 @@ import { nowMs } from "@/lib/time";
 import { notFound } from "next/navigation";
 
 interface PageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export default async function PastePage({ params }: PageProps) {
-  const key = `paste:${params.id}`;
+  const { id } = await params;
+  const key = `paste:${id}`;
+  const viewsKey = `paste:${id}:views`;
   const paste = await kv.get<any>(key);
 
   if (!paste) {
@@ -20,10 +22,11 @@ export default async function PastePage({ params }: PageProps) {
     notFound();
   }
 
-  // View limit check (no increment here)
+  // View limit check using separate views counter
+  const views = await kv.get<number>(viewsKey) || 0;
   if (
     paste.max_views !== null &&
-    paste.views >= paste.max_views
+    views >= paste.max_views
   ) {
     notFound();
   }

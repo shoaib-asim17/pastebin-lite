@@ -7,8 +7,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const key = `paste:${id}`;
-  const paste = await kv.get<any>(key);
+  const pasteKey = `paste:${id}`;
+  const viewsKey = `paste:${id}:views`;
+  const paste = await kv.get<any>(pasteKey);
 
   if (!paste) {
     return NextResponse.json(
@@ -26,8 +27,8 @@ export async function GET(
     );
   }
 
-  // Increment views atomically
-  const views = await kv.hincrby(key, "views", 1);
+  // Increment views atomically with separate key
+  const views = await kv.incr(viewsKey);
 
   // View limit check
   if (paste.max_views !== null && views > paste.max_views) {
